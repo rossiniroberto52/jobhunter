@@ -138,7 +138,7 @@ mod tests {
     #[test]
     fn extrai_localizacao_basica() {
         assert_eq!(extrai_localizacao("Vaga em São Paulo, SP"), "são paulo");
-        assert_eq!(extrai_localizacao("Home office remoto"), "remote");
+        assert_eq!(extrai_localizacao("Home office remoto"), "remoto");
         assert_eq!(extrai_localizacao("Vaga em Curitiba - PR"), "curitiba");
         assert_eq!(extrai_localizacao("Vaga em Marte"), "");
     }

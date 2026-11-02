@@ -26,9 +26,11 @@ cargo run --release -- tui
 
 # 2b) ou abra a interface gráfica (GUI)
 cargo run --release -- gui
-#   Buscar vagas | Avisar Telegram | Atualizar lista
+#   Buscar vagas | Avisar Telegram | Atualizar lista | Importar currículo
 #   Clique em "Abrir" para abrir no navegador
 #   Botões Applied / Interview / Rejected / Ignored / New mudam o status
+#   "Importar currículo" abre um seletor de arquivo (.txt/.md), extrai keywords
+#   e grava pesos sugeridos em pesos-sugeridos.toml
 
 # 2c) ou lista via CLI
 cargo run --release -- list --min-score 6

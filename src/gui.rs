@@ -1,6 +1,7 @@
 use crate::db::{list, open};
 use chrono::Local;
 use eframe::egui;
+use rfd;
 use std::sync::mpsc;
 use std::thread;
 use webbrowser;
@@ -14,6 +15,8 @@ pub struct JobHunterApp {
     receiver: Option<mpsc::Receiver<GuiMsg>>,
     sender: mpsc::Sender<GuiMsg>,
     open_url: Option<String>,
+    cv_dialog: Option<std::path::PathBuf>,
+    cv_result: Option<String>,
 }
 
 enum GuiMsg {
@@ -34,6 +37,8 @@ impl JobHunterApp {
             receiver: Some(receiver),
             sender,
             open_url: None,
+            cv_dialog: None,
+            cv_result: None,
         };
         app.refresh_jobs();
         app
@@ -227,6 +232,37 @@ impl JobHunterApp {
     fn open_url(&mut self, url: &str) {
         self.open_url = Some(url.to_string());
     }
+
+    fn import_cv(&mut self, path: &std::path::Path) {
+        let text = match std::fs::read_to_string(path) {
+            Ok(t) => t,
+            Err(e) => {
+                self.cv_result = Some(format!("erro ao ler arquivo: {e}"));
+                return;
+            }
+        };
+
+        let profile = crate::profile::Profile::from_text(&text);
+        let out_path = "pesos-sugeridos.toml";
+
+        match crate::profile::save_weights_toml(&profile, out_path) {
+            Ok(()) => {
+                let top = profile.top_keywords(10);
+                let linhas: Vec<String> = top.iter().map(|(w, c)| format!("  {c}x  {w}")).collect();
+                self.cv_result = Some(format!(
+                    "currículo importado: {}\nnível: {}\n\nTop keywords:\n{}\n\nPesos salvos em: {}",
+                    path.display(),
+                    profile.level.as_deref().unwrap_or("(não identificado)"),
+                    linhas.join("\n"),
+                    out_path
+                ));
+                self.log(format!("currículo importado: {}", path.display()));
+            }
+            Err(e) => {
+                self.cv_result = Some(format!("erro ao salvar pesos: {e}"));
+            }
+        }
+    }
 }
 
 impl eframe::App for JobHunterApp {
@@ -270,6 +306,11 @@ impl eframe::App for JobHunterApp {
                 }
                 if ui.button("🔄 Atualizar lista").clicked() {
                     self.refresh_jobs();
+                }
+                if ui.button("📄 Importar currículo").clicked() {
+                    if let Some(path) = rfd::FileDialog::new().pick_file() {
+                        self.cv_dialog = Some(path);
+                    }
                 }
             });
 
@@ -356,9 +397,24 @@ impl eframe::App for JobHunterApp {
                         }
                     });
             });
-        });
 
-        // Aplica ações coletadas
+            ui.separator();
+
+            // Processa currículo selecionado via file dialog
+            if let Some(path) = self.cv_dialog.take() {
+                self.import_cv(&path);
+            }
+
+            // Mostra resultado da importação (colapsável na tela principal)
+            if self.cv_result.is_some() {
+                ui.separator();
+                ui.collapsing("✅ Resultado da importação de currículo", |ui| {
+                    if let Some(ref resultado) = self.cv_result {
+                        ui.label(resultado);
+                    }
+                });
+            }
+            });
         if let Some(url) = open_url {
             self.open_url(&url);
         }
