@@ -1,0 +1,34 @@
+# Cada uma destas palavras tira 5 pontos na nota.
+# (Fica no topo porque, em TOML, chaves soltas precisam vir antes das [tabelas].)
+exclude = ["senior", "sênior", "staff", "principal", "lead", "10+ years", "8+ years", "5+ years", "pleno"]
+
+# Termos de busca enviados para as fontes de vagas
+[search]
+queries = ["backend", "java", "python", "junior"]
+# A vaga só entra se o campo de localização contiver algum destes termos
+allowed_locations = ["worldwide", "anywhere", "brazil", "brasil", "latam", "latin america", "americas"]
+
+# Palavras que somam pontos (cada uma conta uma vez). A nota final vai de 0 a 10.
+[weights]
+java = 3
+"spring boot" = 3
+spring = 1
+python = 2
+fastapi = 2
+sql = 1
+postgresql = 1
+docker = 1
+rust = 1
+junior = 2
+"júnior" = 2
+intern = 3
+internship = 3
+"estágio" = 3
+estagiario = 3
+"entry level" = 2
+
+# Feeds RSS/Atom de careers pages (adicione quantos quiser)
+[rss]
+feeds = [
+    # exemplo: "https://example.com/careers/feed.xml",
+]

@@ -1,0 +1,23 @@
+[package]
+name = "jobhunter"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+crossterm = "0.28"
+feed-rs = "2.4"
+ratatui = { version = "0.28", features = ["crossterm"] }
+reqwest = { version = "0.12", features = ["json"] }
+rusqlite = { version = "0.31", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+futures = "0.3"
+egui = "0.29"
+eframe = "0.29"
+tokio = { version = "1", features = ["full"] }
+toml = "0.8"
+chrono = "0.4"
+urlencoding = "2.1"
+webbrowser = "1.2"

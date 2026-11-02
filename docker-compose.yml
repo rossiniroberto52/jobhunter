@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  jobhunter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jobhunter:latest
+    container_name: jobhunter
+    environment:
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+    volumes:
+      - ./config.toml:/app/config.toml:ro
+      - ./jobs.db:/data/jobs.db
+    command: ["gui"]

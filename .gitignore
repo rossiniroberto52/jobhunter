@@ -1,0 +1,12 @@
+/target
+jobs.db
+.env
+weights-from-cv.toml
+pesos-sugeridos.toml
+dist/
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
