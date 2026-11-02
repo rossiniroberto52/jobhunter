@@ -235,9 +235,9 @@ impl JobHunterApp {
     }
 
     fn import_cv(&mut self, path: &std::path::Path) {
-        // Se for PDF, tenta converter com pdftotext (utilitário do poppler)
+        // Se for PDF, extrai texto puro em Rust (sem pdftotext)
         let text = if path.extension().and_then(|e| e.to_str()) == Some("pdf") {
-            match converter_pdf_para_texto(path) {
+            match extrair_texto_pdf(path) {
                 Ok(t) => t,
                 Err(e) => {
                     self.cv_result = Some(format!("{e}"));
@@ -277,27 +277,52 @@ impl JobHunterApp {
     }
 }
 
-/// Tenta extrair texto de um PDF usando o utilitário `pdftotext` (pacote poppler-utils).
-/// Se não estiver instalado, devolve erro com instruções.
-fn converter_pdf_para_texto(path: &std::path::Path) -> Result<String, String> {
-    let output = std::process::Command::new("pdftotext")
-        .arg(path)
-        .arg("-")
-        .output()
-        .map_err(|_| {
-            "pdftotext não encontrado. Instale o pacote poppler-utils (Linux) ou poppler (Windows) e tente novamente."
-                .to_string()
-        })?;
+/// Extrai texto de um PDF puro em Rust usando `lopdf`.
+/// Não depende de nenhum utilitário externo (sem pdftotext).
+fn extrair_texto_pdf(path: &std::path::Path) -> Result<String, String> {
+    use lopdf::Document;
 
-    if !output.status.success() {
-        return Err(format!(
-            "pdftotext falhou (código {:?}): {}",
-            output.status.code(),
-            String::from_utf8_lossy(&output.stderr)
-        ));
+    let doc = Document::load(path)
+        .map_err(|e| format!("não consegui abrir o PDF: {e}"))?;
+
+    let mut texto = String::new();
+
+    for (_numero, page_id) in doc.get_pages() {
+        let Ok(page) = doc.get_page_content(page_id) else {
+            continue;
+        };
+
+        let bruto = String::from_utf8_lossy(&page).to_string();
+
+        // Extrai strings entre ( e ) — simplificado, funciona para a maioria dos PDFs
+        let mut inicio = 0;
+        while let Some(abre) = bruto[inicio..].find('(') {
+            let i = inicio + abre;
+            let resto = &bruto[i + 1..];
+            if let Some(fecha) = resto.find(')') {
+                let trecho = &resto[..fecha];
+                // Filtra sequências de escape simples
+                let limpo = trecho
+                    .replace('\n', " ")
+                    .replace('\r', " ")
+                    .replace('\t', " ");
+                if !limpo.trim().is_empty() {
+                    texto.push_str(&limpo);
+                    texto.push(' ');
+                }
+                inicio = i + fecha + 1;
+            } else {
+                break;
+            }
+        }
+        texto.push('\n');
     }
 
-    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+    if texto.trim().is_empty() {
+        return Err("não foi possível extrair texto deste PDF (pode ser imagem digitalizada)".to_string());
+    }
+
+    Ok(texto)
 }
 
 impl eframe::App for JobHunterApp {
