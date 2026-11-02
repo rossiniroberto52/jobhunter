@@ -31,7 +31,7 @@ cargo run --release -- gui
 #   Botões Applied / Interview / Rejected / Ignored / New mudam o status
 #   "Importar currículo" abre um seletor de arquivo (.txt/.md/.pdf), extrai keywords
 #   e grava pesos sugeridos em pesos-sugeridos.toml
-#   Para PDFs, precisa do utilitário `pdftotext` (poppler-utils no Linux, poppler no Windows)
+#   PDFs funcionam direto no binário (lopdf embarcado), sem instalar nada a mais
 
 # 2c) ou lista via CLI
 cargo run --release -- list --min-score 6
