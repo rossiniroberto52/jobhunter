@@ -2,6 +2,7 @@ use crate::db::{list, open};
 use chrono::Local;
 use eframe::egui;
 use rfd;
+use std::result::Result;
 use std::sync::mpsc;
 use std::thread;
 use webbrowser;
@@ -234,11 +235,22 @@ impl JobHunterApp {
     }
 
     fn import_cv(&mut self, path: &std::path::Path) {
-        let text = match std::fs::read_to_string(path) {
-            Ok(t) => t,
-            Err(e) => {
-                self.cv_result = Some(format!("erro ao ler arquivo: {e}"));
-                return;
+        // Se for PDF, tenta converter com pdftotext (utilitário do poppler)
+        let text = if path.extension().and_then(|e| e.to_str()) == Some("pdf") {
+            match converter_pdf_para_texto(path) {
+                Ok(t) => t,
+                Err(e) => {
+                    self.cv_result = Some(format!("{e}"));
+                    return;
+                }
+            }
+        } else {
+            match std::fs::read_to_string(path) {
+                Ok(t) => t,
+                Err(e) => {
+                    self.cv_result = Some(format!("erro ao ler arquivo: {e}"));
+                    return;
+                }
             }
         };
 
@@ -263,6 +275,29 @@ impl JobHunterApp {
             }
         }
     }
+}
+
+/// Tenta extrair texto de um PDF usando o utilitário `pdftotext` (pacote poppler-utils).
+/// Se não estiver instalado, devolve erro com instruções.
+fn converter_pdf_para_texto(path: &std::path::Path) -> Result<String, String> {
+    let output = std::process::Command::new("pdftotext")
+        .arg(path)
+        .arg("-")
+        .output()
+        .map_err(|_| {
+            "pdftotext não encontrado. Instale o pacote poppler-utils (Linux) ou poppler (Windows) e tente novamente."
+                .to_string()
+        })?;
+
+    if !output.status.success() {
+        return Err(format!(
+            "pdftotext falhou (código {:?}): {}",
+            output.status.code(),
+            String::from_utf8_lossy(&output.stderr)
+        ));
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
 impl eframe::App for JobHunterApp {
